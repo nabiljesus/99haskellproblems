@@ -1,5 +1,23 @@
-import Debug.Trace
--- Implementado por un cono
+myLast :: [a] -> a
+myLast []     = error "Lista vacia"
+myLast [a]    = a
+myLast (x:xs) = myLast xs
+
+myButLast :: [a] -> a
+myButLast []     = error "Listas vacias"
+myButLast [a,b]  = a
+myButLast (x:xs) = myButLast xs
+
+elementAt :: [a] -> Int -> a
+elementAt  _ n | n <= 0 = error "No such index"
+elementAt (x:_ ) 1 = x
+elementAt (_:xs) n = elementAt xs (n-1)
+
+myLength :: [a] -> Int
+myLength []  = 0
+myLength (_:xs) = 1 + myLength xs
+
+-- Muuuuuu
 myReverse :: [a] -> [a]
 myReverse []     = []
 myReverse (x:xs) = myReverse xs ++ [x]
@@ -33,18 +51,21 @@ compress (x:(y:ys))
     |x == y = compress (x:ys)
     |x /= y = [x] ++ compress (y:ys)
 
+-- Usando unas concatenaciones medio malas meh
 pack :: (Eq a, Show a) => [a] -> [[a]]
 pack []  = []
 pack [x] = [[x]]
 pack (x:xs)  = compressOnLeft [] [x] xs False
-            where compressOnLeft res [] _ _      = res
+            where compressOnLeft res []  []  _  = res 
+                  compressOnLeft res acc []  _  = res ++ [acc]
                   compressOnLeft res acc l False
-                    | head acc == head l = trace ("Hola my lista es" ++ show l) (compressOnLeft res ([head l]++acc) (tail l) False )
-                    | otherwise          = (compressOnLeft res acc l True )
+                    | head acc == head l = compressOnLeft res ([head l]++acc) (tail l) False 
+                    | otherwise          = compressOnLeft res acc l True 
                   compressOnLeft res acc l True
                     | l == []   = compressOnLeft (res ++ [acc]) [] [] False           -- Cuello de botella en la ++
-                    | otherwise = trace ("Chao my lista es" ++ show l) compressOnLeft (res ++ [acc]) [head l] (tail l) False
+                    | otherwise =  compressOnLeft (res ++ [acc]) [head l] (tail l) False
 
--- Ultima recursion explota dunno what todo
--- explosion = pack ['a', 'a', 'a', 'a', 'b', 'c', 'c', 'a',  'a', 'd', 'e', 'e', 'e', 'e']
--- main = print explosion
+encode :: (Eq a, Show a) => [a] -> [(Int,a)]
+encode [] = []
+encode x = map makePair (pack x)
+            where makePair ls = (length ls, head ls)
