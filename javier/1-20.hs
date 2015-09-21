@@ -69,3 +69,37 @@ encode :: (Eq a, Show a) => [a] -> [(Int,a)]
 encode [] = []
 encode x = map makePair (pack x)
             where makePair ls = (length ls, head ls)
+
+data Compress a = Multiple  Int a | Single a deriving (Show)
+
+encodeModified :: (Eq a,Show a) => [a] -> [Compress a]
+encodeModified x = map convert (encode x)
+                  where convert (1,e) = (Single e)
+                        convert (n,e) = (Multiple n e)
+
+decodeModified :: (Eq a,Show a) => [Compress a] -> [a]
+decodeModified x = foldl (++) [] (map deconvert x)
+                    where deconvert (Single e)     = [e]
+                          deconvert (Multiple n e) = replicate n e
+
+dupli :: [a] -> [a]
+dupli []     = []
+dupli (x:xs) = (x:x:dupli xs) 
+
+repli :: [a] -> Int -> [a]
+repli [] _ = []
+repli arg n = countDown n arg
+                  where countDown _   []     = []
+                        countDown 0 (x:xs)   = countDown n xs
+                        countDown n l@(x:xs) = (x:countDown (n-1) l )
+
+repli' :: [a] -> Int -> [a]
+repli' [] _ = []
+repli' (a:as) n = (replicate n a) ++ (repli' as n)
+
+dropEvery :: [a] -> Int -> [a]
+dropEvery [] _ = []
+dropEvery a n = takeNonZeroes a (n-1)
+                where takeNonZeroes [] _     = []
+                      takeNonZeroes (x:xs) 0 = takeNonZeroes xs n
+                      takeNonZeroes (x:xs) i = (x : takeNonZeroes xs (i-1))
