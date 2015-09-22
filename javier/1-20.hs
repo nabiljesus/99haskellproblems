@@ -97,9 +97,47 @@ repli' :: [a] -> Int -> [a]
 repli' [] _ = []
 repli' (a:as) n = (replicate n a) ++ (repli' as n)
 
-dropEvery :: [a] -> Int -> [a]
-dropEvery [] _ = []
-dropEvery a n = takeNonZeroes a (n-1)
+dropEvery :: Int -> [a] -> [a]
+dropEvery _ [] = []
+dropEvery n a = takeNonZeroes a n
                 where takeNonZeroes [] _     = []
-                      takeNonZeroes (x:xs) 0 = takeNonZeroes xs n
+                      takeNonZeroes (x:xs) 1 = takeNonZeroes xs n
                       takeNonZeroes (x:xs) i = (x : takeNonZeroes xs (i-1))
+
+split :: [a] -> Int -> ([a],[a])
+split l n = fillLeft ([],[]) n l
+              where fillLeft (l1,_) 0  l2 = (l1,l2)
+                    fillLeft (l1,_) i  (x:xs) = fillLeft (l1++[x],[]) (i-1) xs -- jeje concat
+
+-- Dos recorridos de lista (Way better)
+-- Uno implementa take y el otro drop
+split' :: [a] -> Int -> ([a],[a])
+split' l n =  (expandTill l n , takeRest l n) 
+            where expandTill (x:xs) 0 = []         
+                  expandTill (x:xs) n = (x: expandTill xs (n-1))
+                  takeRest    l     0   =  l
+                  takeRest   (x:xs) n = takeRest xs (n-1)
+
+-- Un solo recorrido de lista
+slice :: [a] -> Int -> Int -> [a]
+slice = dropUntil
+          where dropUntil l      0 e = keepUntil  l e
+                dropUntil (x:xs) 1 e = x:keepUntil xs e
+                dropUntil (x:xs) b e = dropUntil xs (b-1) (e-1)
+                keepUntil (x:xs)   1 = []
+                keepUntil (x:xs)   e = x:keepUntil xs (e-1)
+
+-- Piden usar lengh y ++ 
+rotate :: [a] -> Int -> [a]
+rotate l n  
+  | n == 0    = l
+  | n  > 0    = concatTillZ l [] n
+  | otherwise = concatTillZ l [] ((length l) + n) 
+      where concatTillZ (x:xs) t 0 = x:(xs++reverse t)
+            concatTillZ (x:xs) t n = concatTillZ xs ([x]++t) (n-1) -- agregando al reves
+
+removeAt :: Int -> [a] -> (a,[a])
+removeAt 0 l = error "Undefined index"
+removeAt n l = keepLooking n [] l
+                where keepLooking 1 acc (x:xs) = ( x , acc ++ xs)
+                      keepLooking n acc (x:xs) = keepLooking (n-1) (acc ++ [x]) xs --Ineficiente
